@@ -54,4 +54,7 @@ print(cols_var)
 
 
 
-Xstd = (X-matrix(rep(mean,4), nrow=4,byrow =T))/matrix(rep(sd,4),nrow=4,byrow=T)
+#Xstd = (X-matrix(rep(mean,4), nrow=4,byrow =T))/matrix(rep(sd,4),nrow=4,byrow=T)
+
+
+
