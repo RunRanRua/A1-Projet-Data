@@ -2,10 +2,8 @@
 # **********************************************************************************
 # ***********           Part 1 : Preliminary analysis       ************************
 # **********************************************************************************
-
 # Load dataset
 data <- read.csv("./abalone_data.csv",sep=",")
-
 # ==================================================================================
 # 1/ how many observations abalones are described ? How many variables are there ?
 # ==================================================================================
@@ -25,112 +23,144 @@ print( paste("missing values ? ", has_missing_values))
 # ==================================================================================
 # 3/ Calculate descriptive statistics for all the variables
 # ==================================================================================
-# data's summary
-data_summary <-
-print(summary(data))
-
-# Graphic for "Sex" column
-Sex_category <- unique(data$Sex)
+# Quantitatif variable
+summary(data)
+# Qualitatif variable
 Sex_quantity <-table(data$Sex)
-barplot(Sex_quantity, names.arg = Sex_category, 
-        xlab = "Category", ylab = "Quantity",
-        main = "Sex in dataset")
+print(Sex_quantity)
+# ---------------------------------------------------------------------------------
+# General Graphic
+par(mfrow=c(2,4))
+for(i in 2:length(data_variables)){
+  mean_v <- mean(data[,i])
+  sd_v <- round(sd(data[,i]), digits=2)
+  
+  boxplot(data[,i], 
+          main= data_variables[i], 
+          xlab= paste("sd =", sd_v, sep = " "),  
+          col="lightblue")
+  abline(h=mean_v,  col = "red", lty = 2, lwd = 2) # mean line
+}
+
+# Graphic with sex
+par(mfrow=c(2,4))
+for(i in 2:length(data_variables)){
+  means_sex <- tapply(data[,i], data$Sex, mean)
+  SDs_sex <- round( tapply(data[,i],data$Sex,sd), digits = 2)
+  
+  boxplot(data[,i] ~ data$Sex, 
+          main= data_variables[i],
+          xlab = paste(SDs_sex[1], SDs_sex[2], SDs_sex[3], sep = " | "),
+          col="lightblue")
+  
+  # means
+  for(j in 1:length(means_sex)){
+    lines(c(j-0.5, j+0.5), c(means_sex[j], means_sex[j]), col = "red", lty = 2, lwd = 2)
+  }
+}
 
 
 # **********************************************************************************
 # ******************       Part 2 : PCA        *************************************
 # **********************************************************************************
 
-# ==================== Theoretical question ========================================
-# 1/ If two variables are perfectly correlated in the dataset, would it be suitable to
-#include both of them in the analysis when performing PCA? Justify your answer. In contrast,
-#what if the variables are completely uncorrelated?
 # ==================================================================================
-
-# ===================== Practical questions =========================================
-# 1/ Calculate the variance of each variable and interpret the results. Do you think
-# it is necessary to standardize the variables before performing PCA for this dataset ? Why ?
+# 1/ Varianc of each variable  +  interpret + need Standardize before PCA?
 # ==================================================================================
-
-# data's standard deviation
+# Numeric data
 numeric_data <- data[,2:length(data_variables)]
+# ---------------------------------------------------------------------------------
+# Variances
+vars <- round( sapply(numeric_data,var), digits=3 )
+# ---------------------------------------------------------------------------------
+# interpretation
+var_sd <- round( sd(vars), digits = 2)
 
-cols_var <- sapply(numeric_data,var)
-print(cols_var)
-#standardization would be necessary before doing PCA on the dataset because it can maximize 
-#the variance along the principal components and will reduce the importance of large variances 
-#from secondary components
+# graph
+par(mfrow=c(1,1))
+barplot_vars <- barplot(vars, main = "Variances for each vairable",
+                       xlab = "Variables", ylab = "Variance",
+                       col = "skyblue", border = "white")
+text(x=barplot_vars, y=vars, label=vars, pos=3, col="black")
+legend("topleft",
+       legend=c(paste(names(vars),vars,sep=" : "), paste("standard deviation", var_sd, sep=" : ")),
+       title="result")
 
 # ==================================================================================
 # 2/  Perform PCA using the appropriate function with the appropriate arguments
-#and options considering your answer to the previous question. Analyze the output of the function. 
-#Interpret the values of the two first principal component loading vectors.
+# and options considering your answer to the previous question.
+# Analyze the output of the function.
+# Interpret the values of the two first principal component loading vectors.
 # ==================================================================================
+# Standardize dataset + Perform PCA
+pca_result <- prcomp(numeric_data, scale. = TRUE)
+pca_result
+names(pca_result)
 
-#standardize the data for PCA
-norm_numeric_data <- as.data.frame(scale(numeric_data))
-summary(norm_numeric_data)
+p <- pca_result$rotation[,1:2] # PC1-2 loading vectors
 
-#Perform PCA on standardized variables of the dataset:
-pca_result <- prcomp(norm_numeric_data)
-summary(pca_result)
-
-head(pca_result)
-screeplot(pca_result, type = "lines", main = "Scree Plot")
-#biplot(pca_result, scale = 0)
-#interpret
 
 # ==================================================================================
 # 3/  Calculate the percentage of variance explained (PVE) by each component?
 #Plot the PVE explained by each component, as well as the cumulative PVE. 
 #How many components would you keep? Why?
 # ==================================================================================
+# Summary + PVE + cumultative PVE
+pca_summary_info <-summary(pca_result)
+pca_summary_info
+# Calcul : pve <- pca_result$sdev^2/sum(pca_result$sdev^2)
+pve <- round(pca_summary_info$importance[2,] * 100, digits=2)
+cpve <- round(pca_summary_info$importance[3,]*100, digits=2)
 
-# Extract the standard deviations of the PCs
-sd <- pca_result$sd
+# Graphs
+plot(pve, 
+     xlab = "PC", 
+     ylab="PVE (%)", ylim=c(0,100), 
+     type="b", col = "blue")
+text(x=1:length(pve), y= pve, labels=paste(pve," %"), pos=3, col="blue")
 
-# Calculate the variance explained by each PC
-var_explained <- sd^2
+plot(cumsum(pve), 
+     xlab="PC", 
+     ylab="Cumulative PVE (%)", ylim=c(0,100), 
+     type="b", col = "red")
+text(x=1:length(pve), y= cpve, labels=paste(cpve," %"), pos=1, col="red")
 
-# Calculate the proportion of variance explained
-proportion_var_explained <- var_explained / sum(variance_explained)
-
-# Convert to percentage
-percentage_var_explained <- proportion_var_explained * 100
-
-# View the percentage of variance explained by each PC
-percentage_var_explained
-
-# Calculate cumulative percentage of variance explained
-cumul_percentage_var_explained <- cumsum(percentage_var_explained)
-
-par(mfrow = c(2, 1))
-barplot(percentage_var_explained, type = "o", main = "Percentage of Variance Explained by each PC",
-     xlab = "Principal Components", ylab = "Percentage of Variance Explained", 
-     ylim = c(0, 100), col = "blue", pch = 16)
-plot(cumul_percentage_var_explained, type = "o", main = "Cumulative Percentage of Variance Explained",
-     xlab = "Principal Components", ylab = "Cumulative Percentage of Variance Explained", 
-     ylim = c(0, 100), col = "red", pch = 16)
 
 # ==================================================================================
-# 4/  Use a biplot with a correlation circle to display both the principal component
+# 4/ Use a biplot with a correlation circle to display both the principal component
 #scores and the loading vectors in a single plot. Interpret the results.
 # ==================================================================================
+# Graph
+# 1st Way
+# biplot(pca_result,scale=0)
+# symbols(0, 0, circles = 1, inches = FALSE, add = TRUE, fg = "blue")
 
-install.packages("factoextra")
-library(factoextra)
+# 2nd Way : make graph better
+library(ggplot2) #install.packages('ggplot2')
+library(ggforce) #install.packages('ggforce')
 
-# Create a basic biplot
-biplot(pca_result, scale = 0, main = "PCA Biplot with Correlation Circle")
+plotdata <- as.data.frame(pca_result$x[,1:2]) #  PC1/PC2's data
+plotdata$abalone <- rownames(plotdata)  # add names
+rotdata <- as.data.frame(pca_result$rotation[,1:2]) # PC1/PC2's rotation
+rotdata$variables <- rownames(rotdata) # add names
 
-# Add a correlation circle
-# Calculate the radius of the correlation circle
-circle_radius <- sqrt(2)
+ggplot() +
+  theme_bw() + theme(panel.grid.major=element_line(colour=NA), panel.grid.minor = element_blank()) + # remove grid
+  geom_hline(aes(yintercept = 0), colour="gray88", linetype="dashed") + # horizontal line
+  geom_vline(aes(xintercept = 0), colour="gray88", linetype="dashed") + # vertical line
+  geom_text(data = plotdata, aes(x = PC1, y = PC2, label = abalone), size = 3) + # data
+  scale_y_continuous(sec.axis = sec_axis(~./6)) + scale_x_continuous(sec.axis = sec_axis(~./10)) + # 2nd axis
+  geom_segment(data = rotdata,aes(x=0, xend= PC1*10, y=0, yend= PC2*6), arrow = arrow(length = unit(0.03, "npc")), colour = 'red') +   # vectors
+  geom_text(data = rotdata, aes(x = PC1*10.4, y = PC2*6.4, label = variables), size = 4, colour = 'red') + # add vector names
+  geom_circle(aes(x0=0, y0=0, r=7), color="blue", linewidth=1)
 
-# Draw the circle
-symbols(0, 0, circles = circle_radius, inches = FALSE, add = TRUE, fg = "blue")
 
-# Add axis lines
-abline(h = 0, v = 0, col = "gray", lty = 2)
 
-#Xstd = (X-matrix(rep(mean,4), nrow=4,byrow =T))/matrix(rep(sd,4),nrow=4,byrow=T)
+
+# **********************************************************************************
+# ******************       Part 3 : Linear Regression        ***********************
+# **********************************************************************************
+
+
+
+
