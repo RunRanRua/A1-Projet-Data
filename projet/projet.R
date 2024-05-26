@@ -229,7 +229,7 @@ library(leaps)
 # Graph : adj_R2
 subset_model <- regsubsets(age~Length+Diameter+Height+Whole.weight+Shucked.weight+Viscera.weight+Shell.weight,
                           data=data,nvmax=4)
-adj_R2 <- summary(best_subset)$adjr2
+adj_R2 <- summary(subset_model)$adjr2
 bar_adjR2 <-barplot(adj_R2, names.arg = 1:4,xlab="number of variables",ylab="adjusted R^2", main="adjusted R^2 visualization")
 text(x=bar_adjR2, y=adj_R2,label=round(adj_R2, digits=2),pos=1,col="red")
 
@@ -237,7 +237,6 @@ text(x=bar_adjR2, y=adj_R2,label=round(adj_R2, digits=2),pos=1,col="red")
 # get best model
 best_model <-which.max(adj_R2)
 best_model
-
 # 4 -----------------------------------------------------------------------------
 # coef of estimates
 best_model_coef <- coef(subset_model,best_model)
