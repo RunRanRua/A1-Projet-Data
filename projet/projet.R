@@ -8,7 +8,7 @@ data <- read.csv("./abalone_data.csv",sep=",")
 # 1/ how many observations abalones are described ? How many variables are there ?
 # ==================================================================================
 # numbers of observations abalones
-len <- nrow(data) -1
+len <- nrow(data)
 
 # variables
 data_variables <- colnames(data)
@@ -226,12 +226,44 @@ R2
 # 1 best subset selection --------------------------------------------
 library(leaps)
 
-data[,2:length(data)]
-subset_model <- regsubsets(age ~ ., data=data[,2:length(data)], nvmax=4)
-adj_R2 <- summary(subset_model)$adjr2
-adj_R2
-plot(1:4, adj_R2, type = "b", xlab = "Number of Features", ylab = "Adjusted R^2", main = "Adjusted R^2 vs Number of Features")
-# ???
+# Graph : adj_R2
+subset_model <- regsubsets(age~Length+Diameter+Height+Whole.weight+Shucked.weight+Viscera.weight+Shell.weight,
+                          data=data,nvmax=4)
+adj_R2 <- summary(best_subset)$adjr2
+bar_adjR2 <-barplot(adj_R2, names.arg = 1:4,xlab="number of variables",ylab="adjusted R^2", main="adjusted R^2 visualization")
+text(x=bar_adjR2, y=adj_R2,label=round(adj_R2, digits=2),pos=1,col="red")
+
+
+# get best model
+best_model <-which.max(adj_R2)
+best_model
+
+# 4 -----------------------------------------------------------------------------
+# coef of estimates
+best_model_coef <- coef(subset_model,best_model)
+best_model_coef
+
+# coef of determination R2
+R2 <- summary(best_subset)$rsq[best_model]
+R2
+
+# 5 -----------------------------------------------------------------------------
+# multiple linear regression model
+multiple_model <- lm(age~Diameter+Whole.weight+Shucked.weight+Shell.weight,data=data)
+
+# p-values
+p_values_coef <- summary(multiple_model)$coefficients[,4]
+p_values_coef
+
+# F-test
+ssr <- sum((multiple_model$fitted.values - mean(multiple_model$fitted.values))^2)
+sse <- sum(multiple_model$residuals^2)
+
+df_ssr <- length(multiple_model$coefficients) -1
+df_sse <- length(multiple_model$residuals) - length(multiple_model$coefficients)
+
+f_stat_multiple <- (ssr/df_ssr) / (sse / df_sse)
+f_stat_multiple # 1107.491 >1
 
 
 
