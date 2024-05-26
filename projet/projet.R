@@ -96,9 +96,16 @@ legend("topleft",
 pca_result <- prcomp(numeric_data, scale. = TRUE)
 pca_result
 names(pca_result)
-PC1_2 <- pca_result$rotation[,1:2] # PC1-2 loading vectors
+loadings1_2 <- pca_result$rotation[,1:2] # PC1-2 loading vectors
+loadings1_2[,1]
 
-
+# Graph
+plot(loadings1_2[,1], loadings1_2[,2], 
+     xlab = "PC1 loadings", xlim = c(0,0.5),
+     ylab="PC2 loadings", ylim= c(-1,0.4),
+     main="Loadings Plot for PC1 & PC2")
+grid()
+text(loadings1_2[,1], loadings1_2[,2], labels=rownames(loadings1_2),pos=4,col='red')
 # ==================================================================================
 # 3/  Calculate the percentage of variance explained (PVE) by each component?
 #Plot the PVE explained by each component, as well as the cumulative PVE. 
