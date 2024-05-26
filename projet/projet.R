@@ -227,9 +227,9 @@ R2
 library(leaps)
 
 # Graph : adj_R2
-subset_model <- regsubsets(age~Length+Diameter+Height+Whole.weight+Shucked.weight+Viscera.weight+Shell.weight,
+best_subset <- regsubsets(age~Length+Diameter+Height+Whole.weight+Shucked.weight+Viscera.weight+Shell.weight,
                           data=data,nvmax=4)
-adj_R2 <- summary(subset_model)$adjr2
+adj_R2 <- summary(best_subset)$adjr2
 bar_adjR2 <-barplot(adj_R2, names.arg = 1:4,xlab="number of variables",ylab="adjusted R^2", main="adjusted R^2 visualization")
 text(x=bar_adjR2, y=adj_R2,label=round(adj_R2, digits=2),pos=1,col="red")
 
@@ -237,6 +237,7 @@ text(x=bar_adjR2, y=adj_R2,label=round(adj_R2, digits=2),pos=1,col="red")
 # get best model
 best_model <-which.max(adj_R2)
 best_model
+
 # 4 -----------------------------------------------------------------------------
 # coef of estimates
 best_model_coef <- coef(subset_model,best_model)
@@ -264,6 +265,87 @@ df_sse <- length(multiple_model$residuals) - length(multiple_model$coefficients)
 f_stat_multiple <- (ssr/df_ssr) / (sse / df_sse)
 f_stat_multiple # 1107.491 >1
 
+# ==================================================================================
+# MULTIPLE LINEAIR REGRESSION WITH A QUALITATIVE VARIABLE (BONUS)
+# ==================================================================================
+
+# ==================================================================================
+# 1/ How many observations are in each category of the variable Sex ?
+# ==================================================================================
+
+# Get the count of each category in the "Sex" variable
+sex_counts <- table(data$Sex)
+
+# Print the counts
+print(sex_counts)
+
+# ==================================================================================
+# 2/ Plot a boxplot of the target variable Age versus the Sex. Comment on the output
+# ==================================================================================
+
+boxplot(age ~ Sex, data = data, 
+        main = "Boxplot of Age by Sex",
+        xlab = "Sex",
+        ylab = "Age",
+        col = c("lightblue", "lightpink"))
+
+# ==================================================================================
+# 3/ Perform multiple linear regression by adding the Sex as explanatory variable
+# to the model selected in the previous section. Interpret the coefficient estimates of the variable
+# Sex (for each category),perform the zero slope test and conclude.
+# ==================================================================================
+
+# Fit the model including the Sex variable
+multiple_model_with_sex <- lm(age ~ Diameter + Whole.weight + Shucked.weight + Shell.weight + Sex, data = data)
+
+# Summarize the model
+summary(multiple_model_with_sex)
+
+#Coefficients for Sex:
+#  SexI (-0.81997): Infants are estimated to have an age 0.81997 years less than the reference category (Females). 
+#  SexM (0.07133): Males are estimated to have an age 0.07133 years more than the reference category (Females)
+
+# Zero Slope Test for Sex
+# To determine the significance of the Sex variable, you look at the p-values:
+#   SexI: The p-value is 2.15e-15, which is highly significant, indicating that the age difference between Infants and Females is significant.
+#   SexM: The p-value is 0.398, which is not significant, indicating that the age difference between Males and Females is not significant.
+
+# F-test
+ssr_w_sex <- sum((multiple_model_with_sex$fitted.values - mean(multiple_model_with_sex$fitted.values))^2)
+sse_w_sex <- sum(multiple_model_with_sex$residuals^2)
+
+df_ssr_w_sex <- length(multiple_model_with_sex$coefficients) -1
+df_sse_w_sex <- length(multiple_model_with_sex$residuals) - length(multiple_model_with_sex$coefficients)
+
+f_stat_multiple_w_sex <- (ssr_w_sex/df_ssr_w_sex) / (sse_w_sex / df_sse_w_sex)
+f_stat_multiple_w_sex 
+
+anova_result <- anova(multiple_model, multiple_model_with_sex)
+anova_result
+
+#Since the p-value is much smaller than the common significance level of 0.05, we reject the null hypothesis
+#that the simpler model (without Sex) is as good as the more complex model (with Sex). This indicates that 
+#adding the Sex variable to the model significantly improves the fit.
 
 
+# ==================================================================================
+# 4/ For the fitted model make a prediction for an infant abalone with the following
+# characteristics : Length = 0.4 mm, Diameter = 0.35 mm , Height = 0.12 mm, 
+# Whole weight= 0.40 g, Shucked weight =0.15g, Viscera weight = 0.08 g and Shell weight = 0.13 g.
+# ==================================================================================
+
+# New data for prediction
+new_abalone <- data.frame(
+  Diameter = 0.35,
+  Whole.weight = 0.40,
+  Shucked.weight = 0.15,
+  Shell.weight = 0.13,
+  Sex = factor("I", levels = c("F", "M", "I"))
+)
+
+# Predict the age for the new abalone
+predicted_age <- predict(multiple_model_with_sex, newdata = new_abalone)
+
+# Print the predicted age
+predicted_age
 
