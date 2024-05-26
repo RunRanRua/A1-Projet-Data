@@ -96,8 +96,7 @@ legend("topleft",
 pca_result <- prcomp(numeric_data, scale. = TRUE)
 pca_result
 names(pca_result)
-
-p <- pca_result$rotation[,1:2] # PC1-2 loading vectors
+PC1_2 <- pca_result$rotation[,1:2] # PC1-2 loading vectors
 
 
 # ==================================================================================
@@ -144,22 +143,88 @@ plotdata$abalone <- rownames(plotdata)  # add names
 rotdata <- as.data.frame(pca_result$rotation[,1:2]) # PC1/PC2's rotation
 rotdata$variables <- rownames(rotdata) # add names
 
+
 ggplot() +
   theme_bw() + theme(panel.grid.major=element_line(colour=NA), panel.grid.minor = element_blank()) + # remove grid
   geom_hline(aes(yintercept = 0), colour="gray88", linetype="dashed") + # horizontal line
   geom_vline(aes(xintercept = 0), colour="gray88", linetype="dashed") + # vertical line
-  geom_text(data = plotdata, aes(x = PC1, y = PC2, label = abalone), size = 3) + # data
+  geom_point(data = plotdata, aes(x = PC1, y = PC2), size = 1) + # data represented as points
   scale_y_continuous(sec.axis = sec_axis(~./6)) + scale_x_continuous(sec.axis = sec_axis(~./10)) + # 2nd axis
   geom_segment(data = rotdata,aes(x=0, xend= PC1*10, y=0, yend= PC2*6), arrow = arrow(length = unit(0.03, "npc")), colour = 'red') +   # vectors
   geom_text(data = rotdata, aes(x = PC1*10.4, y = PC2*6.4, label = variables), size = 4, colour = 'red') + # add vector names
   geom_circle(aes(x0=0, y0=0, r=7), color="blue", linewidth=1)
 
 
-
-
 # **********************************************************************************
 # ******************       Part 3 : Linear Regression        ***********************
 # **********************************************************************************
+# new column : age = 1.5 + Card(rings)
+data$age <-1.5+data$Rings
+
+
+# ==================================================================================
+# SIMPLE LINEAR REGRESSION
+# ==================================================================================
+# Calculate correlation coefficient : r --------------------------------------------
+all_r <- data[, !names(data) %in% c('Rings','Sex')] # remove ring column
+all_r <- data.frame(cor(all_r))   # get all coefficient
+r_age <- all_r$age[1:length(all_r)-1] # obtain data
+r_age
+
+# Graph to analyze ----------------------------------------------------------------
+r_barplot <- barplot(r_age, names.arg = rownames(all_r)[1:length(all_r)-1], 
+                     main="correlation coefficient between Age and each of the other variables",
+                     xlab="variables", ylab="coefficient")
+text(x = r_barplot, y=r_age, label=round(r_age, digits=2),pos=1 )
+
+
+# Fit the Simple Regression Linear model ----------------------------------------
+Y <- data$age    # target variable
+X <- data$Shell.weight  # feature (most correlated)
+model_simple <- lm(Y ~ X)  # model
+
+summary(model_simple) # description
+
+# get coefficient estimate : Y = beta1 * X + beta0 + eps -------------------------
+coefficients <- coef(model_simple)
+beta0 <- coefficients[1] # intercep or b in (Y = aX+b) [the starting point in y axis]
+beta1 <- coefficients[2] # slope or a in (Y = aX+b)  [pente]
+
+beta0 # 7.962117
+beta1 # 13.53568 >0 so proportional between X and Y
+
+
+# 95% Confidence Interval -------------------------------------------------------
+se_beta1 <- summary(model_simple)$coefficients["X","Std. Error"] # standard error of beta1
+alpha <- 0.05
+df <- model_simple$df.residual # degree of freedom
+critical_value <- qt(1-alpha/2, df=df) # t_alpha/2
+margin_err <- critical_value * se_beta1
+
+interval_95 <- c(beta1 - margin_err, beta1 + margin_err)
+interval_95
+
+# zero slope hypothesis test ----------------------------------------------------
+t_stat <- beta1 / se_beta1 # t-statistic
+t_stat
+p <-2*pt(abs(t_stat), df, lower.tail = FALSE) # ~0 so reject hypothesis
+
+# coefficient of determination R^2
+R2 <- round( all_r["Shell.weight","age"]^2, digits=2)
+R2
+
+# ==================================================================================
+# MULTIPLE LINEAIR REGRESSION
+# ==================================================================================
+# 1 best subset selection --------------------------------------------
+library(leaps)
+
+data[,2:length(data)]
+subset_model <- regsubsets(age ~ ., data=data[,2:length(data)], nvmax=4)
+adj_R2 <- summary(subset_model)$adjr2
+adj_R2
+plot(1:4, adj_R2, type = "b", xlab = "Number of Features", ylab = "Adjusted R^2", main = "Adjusted R^2 vs Number of Features")
+# ???
 
 
 
