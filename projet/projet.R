@@ -28,6 +28,7 @@ summary(data)
 # Qualitatif variable
 Sex_quantity <-table(data$Sex)
 print(Sex_quantity)
+
 # ---------------------------------------------------------------------------------
 # General Graphic
 par(mfrow=c(2,4))
@@ -37,9 +38,19 @@ for(i in 2:length(data_variables)){
   
   boxplot(data[,i], 
           main= data_variables[i], 
-          xlab= paste("sd =", sd_v, sep = " "),  
-          col="lightblue")
+          xlab= paste("sd =", sd_v, sep = " "), cex.lab = 1.5,
+          col="lightblue",
+          outline = TRUE)
   abline(h=mean_v,  col = "red", lty = 2, lwd = 2) # mean line
+  
+  stats <- summary(data[,i])
+  text(1, stats[1], paste("Min =", stats[1]), pos = 3, offset = 0.5, col = "purple",cex=1.3)
+  text(0.8, stats[2], paste("Q1 =", stats[2]), pos = 3, offset = -1, col = "blue",cex=1.3)
+  text(1, stats[3], paste("Median =", stats[3]), pos = 3, offset = 0.5, col = "blue",cex=1.3)
+  text(1.3, stats[4], paste("Mean =", round(mean_v, digits=2)), pos = 1, offset = 0.5, col = "red",cex=1.3)
+  text(0.8, stats[5], paste("Q3 =", stats[5]), pos = 3, offset = 1, col = "blue",cex=1.3)
+  text(1, stats[6], paste("Max =", stats[6]), pos = 3, offset = -0.8, col = "purple",cex=1.3)
+  
 }
 
 # Graphic with sex
@@ -52,6 +63,7 @@ for(i in 2:length(data_variables)){
           main= data_variables[i],
           xlab = paste(SDs_sex[1], SDs_sex[2], SDs_sex[3], sep = " | "),
           col="lightblue")
+  
   
   # means
   for(j in 1:length(means_sex)){
