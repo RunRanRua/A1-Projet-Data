@@ -213,6 +213,11 @@ beta0 # 7.962117
 beta1 # 13.53568 >0 so proportional between X and Y
 
 
+# Model
+plot(data$Shell.weight,data$age, main="Simple Linear Regression", xlab="Shell_Weight", ylab="Age")
+abline(model_simple, col="red",lwd=3)
+
+
 # 95% Confidence Interval -------------------------------------------------------
 se_beta1 <- summary(model_simple)$coefficients["X","Std. Error"] # standard error of beta1
 alpha <- 0.05
@@ -252,8 +257,11 @@ best_model
 
 # 4 -----------------------------------------------------------------------------
 # coef of estimates
-best_model_coef <- coef(subset_model,best_model)
+best_model_coef <- coef(best_subset,best_model)
 best_model_coef
+
+
+# model
 
 # coef of determination R2
 R2 <- summary(best_subset)$rsq[best_model]
